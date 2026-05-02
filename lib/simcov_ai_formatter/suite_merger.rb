@@ -1,0 +1,90 @@
+module SimcovAiFormatter
+  # Merges multiple suites in a resultset into a single coverage Hash,
+  # or selects one when --suite NAME is given.
+  #
+  # Line merge rules per (file, index):
+  #   - one nil and one Integer → take the Integer
+  #   - both Integer            → take max(hit)
+  #   - both nil                → nil
+  # Branches: hit counts are summed for matching keys; missing keys are added.
+  class SuiteMerger
+    def initialize(resultset, suite: nil)
+      @resultset = resultset
+      @suite = suite
+    end
+
+    # @return [Array(String, Hash)] the selected suite label and the merged coverage hash
+    def select
+      if @suite
+        body = @resultset[@suite]
+        unless body
+          available = @resultset.keys.join(", ")
+          raise SuiteNotFound, "suite #{@suite.inspect} not in resultset (available: #{available})"
+        end
+        [@suite, body["coverage"]]
+      elsif @resultset.size == 1
+        suite, body = @resultset.first
+        [suite, body["coverage"]]
+      else
+        ["merged", merge_all]
+      end
+    end
+
+    private
+
+    def merge_all
+      merged = {}
+      @resultset.each_value do |body|
+        body["coverage"].each do |file, entry|
+          if merged.key?(file)
+            merged[file] = merge_entries(merged[file], entry)
+          else
+            merged[file] = deep_dup(entry)
+          end
+        end
+      end
+      merged
+    end
+
+    def merge_entries(a, b)
+      lines_a = a["lines"]
+      lines_b = b["lines"]
+      length = [lines_a.size, lines_b.size].max
+      merged_lines = Array.new(length) do |i|
+        merge_hit(lines_a[i], lines_b[i])
+      end
+
+      result = { "lines" => merged_lines }
+      branches_a = a["branches"]
+      branches_b = b["branches"]
+      if branches_a || branches_b
+        result["branches"] = merge_branches(branches_a, branches_b)
+      end
+      result
+    end
+
+    def merge_hit(x, y)
+      return y if x.nil?
+      return x if y.nil?
+      [x, y].max
+    end
+
+    def merge_branches(a, b)
+      a ||= {}
+      b ||= {}
+      keys = (a.keys | b.keys)
+      keys.each_with_object({}) do |outer_key, acc|
+        inner_a = a[outer_key] || {}
+        inner_b = b[outer_key] || {}
+        inner_keys = (inner_a.keys | inner_b.keys)
+        acc[outer_key] = inner_keys.each_with_object({}) do |k, sub|
+          sub[k] = (inner_a[k] || 0) + (inner_b[k] || 0)
+        end
+      end
+    end
+
+    def deep_dup(entry)
+      JSON.parse(JSON.generate(entry))
+    end
+  end
+end
