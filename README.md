@@ -149,6 +149,53 @@ Structured form (`{ type: "if", line: ..., then_hits: ..., else_hits: ... }`) is
 - Files outside `root` (e.g. third-party gems) are kept under keys of the form `!abs:/abs/path`.
 - The output contains no timestamp — the JSON is deterministic.
 
+## As a SimpleCov formatter
+
+If you'd rather have the AI-friendly JSON emitted automatically as part of your test run, plug `simcov-ai-formatter` into SimpleCov's formatter pipeline. No separate CLI invocation needed.
+
+```ruby
+# spec/spec_helper.rb (or .simplecov)
+require "simplecov"
+require "simcov_ai_formatter/simple_cov_formatter"
+
+SimpleCov.start do
+  # ... your usual SimpleCov config
+end
+
+# Replace the default formatter
+SimpleCov.formatter = SimcovAiFormatter::SimpleCovFormatter
+
+# Or run alongside the HTML formatter
+SimpleCov.formatters = SimpleCov::Formatter::MultiFormatter.create([
+  SimpleCov::Formatter::HTMLFormatter,
+  SimcovAiFormatter::SimpleCovFormatter
+])
+```
+
+After tests finish, the AI-friendly JSON is written to `coverage/.resultset.ai.json` (or wherever `SimpleCov.coverage_path` points).
+
+### Configuration
+
+Set class-level attributes before `SimpleCov.start`:
+
+```ruby
+SimcovAiFormatter::SimpleCovFormatter.with_source = true
+SimcovAiFormatter::SimpleCovFormatter.context     = 3
+SimcovAiFormatter::SimpleCovFormatter.pretty      = false
+SimcovAiFormatter::SimpleCovFormatter.output_path = "tmp/coverage.ai.json"  # nil = coverage/.resultset.ai.json
+```
+
+### Choosing between the CLI and the formatter
+
+| | CLI | SimpleCov formatter |
+|---|---|---|
+| Re-format an existing `.resultset.json` | ✅ | ❌ (requires re-running tests) |
+| Auto-emit on every test run | ❌ (manual step) | ✅ |
+| Runtime dependency on simplecov | None | Yes (already in your test deps) |
+| Reflects SimpleCov filters/groups | ✅ (already baked into resultset) | ✅ (via `SimpleCov::Result`) |
+
+You can also use both — the formatter for local dev convenience, the CLI for CI artifact post-processing.
+
 ## Programmatic use
 
 The same logic is callable from Ruby:

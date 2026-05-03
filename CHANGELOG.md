@@ -11,3 +11,4 @@
 - Multiple suites are merged via `max(hit)`, or a single suite can be selected with `--suite NAME`.
 - Output destinations: stdout (default) or `--output PATH`.
 - Public Ruby API: `SimcovAiFormatter.format(path, **opts)` returns a Hash.
+- SimpleCov formatter plugin (`SimcovAiFormatter::SimpleCovFormatter`) — emit the AI-friendly JSON automatically during a SimpleCov run, without an extra CLI step. Configure via class-level attributes (`with_source`, `context`, `pretty`, `output_path`).
