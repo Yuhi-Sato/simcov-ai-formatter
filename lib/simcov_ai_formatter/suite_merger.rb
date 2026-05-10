@@ -15,22 +15,30 @@ module SimcovAiFormatter
 
     # @return [Array(String, Hash)] the selected suite label and the merged coverage hash
     def select
-      if @suite
-        body = @resultset[@suite]
-        unless body
-          available = @resultset.keys.join(", ")
-          raise SuiteNotFound, "suite #{@suite.inspect} not in resultset (available: #{available})"
-        end
-        [@suite, body["coverage"]]
-      elsif @resultset.size == 1
-        suite, body = @resultset.first
-        [suite, body["coverage"]]
-      else
-        ["merged", merge_all]
-      end
+      return select_specified_suite if @suite
+      return select_sole_suite if @resultset.size == 1
+      select_merged_suites
     end
 
     private
+
+    def select_specified_suite
+      body = @resultset[@suite]
+      unless body
+        available = @resultset.keys.join(", ")
+        raise SuiteNotFound, "suite #{@suite.inspect} not in resultset (available: #{available})"
+      end
+      [@suite, body["coverage"]]
+    end
+
+    def select_sole_suite
+      suite, body = @resultset.first
+      [suite, body["coverage"]]
+    end
+
+    def select_merged_suites
+      ["merged", merge_all]
+    end
 
     def merge_all
       merged = {}
