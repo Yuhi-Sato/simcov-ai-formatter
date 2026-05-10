@@ -82,12 +82,14 @@ module SimcovAiFormatter
       b ||= {}
       keys = (a.keys | b.keys)
       keys.each_with_object({}) do |outer_key, acc|
-        inner_a = a[outer_key] || {}
-        inner_b = b[outer_key] || {}
-        inner_keys = (inner_a.keys | inner_b.keys)
-        acc[outer_key] = inner_keys.each_with_object({}) do |k, sub|
-          sub[k] = (inner_a[k] || 0) + (inner_b[k] || 0)
-        end
+        acc[outer_key] = sum_branch_hits(a[outer_key] || {}, b[outer_key] || {})
+      end
+    end
+
+    def sum_branch_hits(inner_a, inner_b)
+      inner_keys = (inner_a.keys | inner_b.keys)
+      inner_keys.each_with_object({}) do |k, sub|
+        sub[k] = (inner_a[k] || 0) + (inner_b[k] || 0)
       end
     end
 
