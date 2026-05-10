@@ -48,18 +48,13 @@ module SimcovAiFormatter
       lines = entry["lines"] || []
       relevant = lines.count { |v| !v.nil? }
       covered = lines.count { |v| v.is_a?(Integer) && v.positive? }
-      missed = relevant - covered
-
-      uncovered_lines = []
-      lines.each_with_index do |v, i|
-        uncovered_lines << (i + 1) if v.is_a?(Integer) && v.zero?
-      end
+      uncovered_lines = find_uncovered_lines(lines)
       uncovered_ranges = collapse_ranges(uncovered_lines)
 
       file_entry = {
         "relevant_lines" => relevant,
         "covered_lines" => covered,
-        "missed_lines" => missed,
+        "missed_lines" => relevant - covered,
         "coverage_percentage" => percentage(covered, relevant),
         "uncovered_ranges" => uncovered_ranges,
         "uncovered_lines" => uncovered_lines
@@ -72,10 +67,21 @@ module SimcovAiFormatter
         end
       end
 
+      attach_branches(file_entry, entry)
+      file_entry
+    end
+
+    def find_uncovered_lines(lines)
+      result = []
+      lines.each_with_index do |v, i|
+        result << (i + 1) if v.is_a?(Integer) && v.zero?
+      end
+      result
+    end
+
+    def attach_branches(file_entry, entry)
       branches = entry["branches"]
       file_entry["branches_raw"] = branches if branches.is_a?(Hash) && !branches.empty?
-
-      file_entry
     end
 
     def attach_source(abs_path, range, lines)
