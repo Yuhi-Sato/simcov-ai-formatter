@@ -36,10 +36,14 @@ module SimcovAiFormatter
         return (@cache[path] = nil)
       end
 
+      @cache[path] = read_lines_safely(path)
+    end
+
+    def read_lines_safely(path)
       raw = File.read(path, mode: "rb")
       text = raw.force_encoding("UTF-8")
       text = text.scrub("?") unless text.valid_encoding?
-      @cache[path] = text.split(/\r\n|\r|\n/, -1).tap { |arr| arr.pop if arr.last == "" }
+      text.split(/\r\n|\r|\n/, -1).tap { |arr| arr.pop if arr.last == "" }
     end
   end
 end
