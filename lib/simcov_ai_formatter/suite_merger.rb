@@ -8,12 +8,17 @@ module SimcovAiFormatter
   #   - both nil                → nil
   # Branches: hit counts are summed for matching keys; missing keys are added.
   class SuiteMerger
+    # @param resultset [Hash] parsed resultset shaped as
+    #   `{ suite_name => { "coverage" => Hash, "timestamp" => Integer } }`.
+    #   See class comment for the full shape.
+    # @param suite [String, nil] pick this suite only; nil means merge all suites.
     def initialize(resultset, suite: nil)
       @resultset = resultset
       @suite = suite
     end
 
-    # @return [Array(String, Hash)] the selected suite label and the merged coverage hash
+    # @return [Array(String, Hash)] tuple of [suite label, coverage hash matching
+    #   the shape of Formatter#initialize's coverage arg]
     def select
       return select_specified_suite if @suite
       return select_sole_suite if @resultset.size == 1
