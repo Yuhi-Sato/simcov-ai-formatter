@@ -33,21 +33,25 @@ module SimcovAiFormatter
 
     # SimpleCov calls this with a SimpleCov::Result instance.
     def format(result)
+      with_source = self.class.with_source
+      context = self.class.context
+      pretty = self.class.pretty
+
       raw = result.to_hash
       selected_suite, coverage = SuiteMerger.new(raw).select
 
-      source_reader = self.class.with_source ? SourceReader.new(warnings: $stderr) : nil
+      source_reader = with_source ? SourceReader.new(warnings: $stderr) : nil
       formatted = Formatter.new(
         coverage: coverage,
         suite: selected_suite,
         suites_merged: nil,
         root: simplecov_root,
-        with_source: self.class.with_source,
-        context: self.class.context,
+        with_source: with_source,
+        context: context,
         source_reader: source_reader
       ).call
 
-      json = Renderer.new(pretty: self.class.pretty).render(formatted)
+      json = Renderer.new(pretty: pretty).render(formatted)
       target = resolve_output_path
       File.write(target, json + "\n")
       source_reader&.report_missing
