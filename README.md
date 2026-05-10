@@ -152,6 +152,12 @@ result = SimcovAiFormatter.format(
 puts result["summary"]["coverage_percentage"]
 ```
 
+## Use with Claude Code
+
+This repo ships a Claude Code skill at [`.claude/skills/reviewing-simcov-ai-coverage/`](.claude/skills/reviewing-simcov-ai-coverage/SKILL.md). It tells Claude to read `coverage/.resultset.ai.json` (not the raw `.resultset.json`) whenever asked about test coverage in a project that uses this gem, and shows the JSON's shape so Claude does not need to discover it by reading the file first.
+
+The skill is auto-loaded when you open this repository in Claude Code. To use it in another project, copy that directory into the project's `.claude/skills/` or your personal `~/.claude/skills/` — `gem install` does not ship `.claude/` (the gemspec only includes `lib/`, `README.md`, `LICENSE.txt`, `CHANGELOG.md`).
+
 ## Development
 
 ```sh
