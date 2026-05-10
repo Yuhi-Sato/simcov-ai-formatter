@@ -12,10 +12,14 @@ module SimcovAiFormatter
   #     ...
   #   }
   class ResultsetLoader
+    # @param path [String] path to SimpleCov resultset.json
     def initialize(path)
       @path = path
     end
 
+    # @return [Hash] parsed resultset; see class comment for shape
+    # @raise [ResultsetNotFound] if the file does not exist
+    # @raise [InvalidResultset] if JSON is malformed or structurally invalid
     def load
       raw = read_json
       validate!(raw)

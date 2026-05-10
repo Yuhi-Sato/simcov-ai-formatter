@@ -3,12 +3,17 @@ module SimcovAiFormatter
   # Files are cached as line arrays after the first read.
   # Missing files and unknown encodings never crash the caller.
   class SourceReader
+    # @param warnings [IO, nil] destination for missing-source warnings;
+    #   nil disables warnings
     def initialize(warnings: nil)
       @cache = {}
       @missing = []
       @warnings = warnings
     end
 
+    # @param path [String] absolute path to the source file
+    # @param start_line [Integer] inclusive 1-indexed start line; clamped to >= 1
+    # @param end_line [Integer] inclusive 1-indexed end line; clamped to file size
     # @return [Array<[Integer, String]>, nil] line-number/text pairs, or nil if the file is missing
     def read(path, start_line, end_line)
       lines = lines_for(path)
@@ -19,6 +24,9 @@ module SimcovAiFormatter
       (from..to).map { |n| [n, lines[n - 1]] }
     end
 
+    # Writes a summary of missing source files (up to 5 listed) to the
+    # configured warnings IO. No-op when warnings is nil or no files were missing.
+    # @return [void]
     def report_missing
       return if @warnings.nil? || @missing.empty?
       @warnings.puts("simcov-ai-formatter: warning: #{@missing.size} source file(s) not found:")

@@ -32,6 +32,9 @@ module SimcovAiFormatter
     self.output_path = nil
 
     # SimpleCov calls this with a SimpleCov::Result instance.
+    #
+    # @param result [SimpleCov::Result] coverage result handed to the formatter by SimpleCov
+    # @return [String] absolute path of the JSON file that was written
     def format(result)
       with_source = self.class.with_source
       context = self.class.context

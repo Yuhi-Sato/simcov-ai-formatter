@@ -6,6 +6,23 @@ module SimcovAiFormatter
   # Input:  { "<abs_path>" => { "lines" => [null|0|N, ...], "branches" => {...}? } }
   # Output: see README for the full schema.
   class Formatter
+    # @param coverage [Hash{String => Hash}] SimpleCov-shaped coverage hash.
+    #   Keys are absolute file paths. Each value has:
+    #     - "lines" [Array<Integer, nil>] zero-indexed; element at index i is the
+    #       hit count for line (i + 1). nil = non-relevant line (comment/blank),
+    #       0 = missed, positive Integer = hit count.
+    #     - "branches" [Hash, nil] optional. Outer keys are line-number strings,
+    #       inner keys are branch labels ("then" / "else" / ...), values are
+    #       Integer hit counts.
+    # @param suite [String] display label for the suite (e.g. "RSpec", "merged")
+    # @param root [String, Pathname] base directory for relativizing file paths
+    # @param suites_merged [Array<String>, nil] original suite names when multiple
+    #   suites were merged; omitted from the output when fewer than 2 entries
+    # @param with_source [Boolean] embed source snippets around uncovered ranges
+    # @param context [Integer] number of context lines around uncovered ranges
+    #   when with_source is true
+    # @param source_reader [SourceReader, nil] source provider; required when
+    #   with_source is true, otherwise unused
     def initialize(coverage:, suite:, root:, suites_merged: nil, with_source: false, context: 2, source_reader: nil)
       @coverage = coverage
       @suite = suite
@@ -16,6 +33,18 @@ module SimcovAiFormatter
       @source_reader = source_reader
     end
 
+    # @return [Hash] AI-friendly report. Top-level keys:
+    #   - "schema_version" [Integer]
+    #   - "suite" [String]
+    #   - "root" [String] absolute path to the relativization base
+    #   - "summary" [Hash] aggregated counts: "total_files", "relevant_lines",
+    #     "covered_lines", "missed_lines", "coverage_percentage"
+    #   - "files" [Hash{String => Hash}] keyed by relative path; each entry has
+    #     "relevant_lines", "covered_lines", "missed_lines",
+    #     "coverage_percentage", "uncovered_ranges", "uncovered_lines",
+    #     and optionally "branches_raw" when branch data is present
+    #   - "suites_merged" [Array<String>] only present when more than one suite
+    #     was merged
     def call
       files = build_files
       project_summary = aggregate_summary(files)
