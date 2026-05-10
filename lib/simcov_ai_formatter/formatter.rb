@@ -118,14 +118,10 @@ module SimcovAiFormatter
     end
 
     def aggregate_summary(files)
-      total_relevant = 0
-      total_covered = 0
-      total_missed = 0
-      files.each_value do |f|
-        total_relevant += f["relevant_lines"]
-        total_covered += f["covered_lines"]
-        total_missed += f["missed_lines"]
-      end
+      values = files.values
+      total_relevant = values.sum { |f| f["relevant_lines"] }
+      total_covered = values.sum { |f| f["covered_lines"] }
+      total_missed = values.sum { |f| f["missed_lines"] }
       {
         "total_files" => files.size,
         "relevant_lines" => total_relevant,
