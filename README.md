@@ -1,5 +1,7 @@
 # simcov-ai-formatter
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Yuhi-Sato/simcov-ai-formatter)
+
 A CLI gem that converts SimpleCov's `coverage/.resultset.json` into a JSON format **optimized for AI / LLM consumption**.
 
 ## Why this exists
