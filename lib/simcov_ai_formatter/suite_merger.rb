@@ -15,22 +15,30 @@ module SimcovAiFormatter
 
     # @return [Array(String, Hash)] the selected suite label and the merged coverage hash
     def select
-      if @suite
-        body = @resultset[@suite]
-        unless body
-          available = @resultset.keys.join(", ")
-          raise SuiteNotFound, "suite #{@suite.inspect} not in resultset (available: #{available})"
-        end
-        [@suite, body["coverage"]]
-      elsif @resultset.size == 1
-        suite, body = @resultset.first
-        [suite, body["coverage"]]
-      else
-        ["merged", merge_all]
-      end
+      return select_specified_suite if @suite
+      return select_sole_suite if @resultset.size == 1
+      select_merged_suites
     end
 
     private
+
+    def select_specified_suite
+      body = @resultset[@suite]
+      unless body
+        available = @resultset.keys.join(", ")
+        raise SuiteNotFound, "suite #{@suite.inspect} not in resultset (available: #{available})"
+      end
+      [@suite, body["coverage"]]
+    end
+
+    def select_sole_suite
+      suite, body = @resultset.first
+      [suite, body["coverage"]]
+    end
+
+    def select_merged_suites
+      ["merged", merge_all]
+    end
 
     def merge_all
       merged = {}
@@ -74,12 +82,14 @@ module SimcovAiFormatter
       b ||= {}
       keys = (a.keys | b.keys)
       keys.each_with_object({}) do |outer_key, acc|
-        inner_a = a[outer_key] || {}
-        inner_b = b[outer_key] || {}
-        inner_keys = (inner_a.keys | inner_b.keys)
-        acc[outer_key] = inner_keys.each_with_object({}) do |k, sub|
-          sub[k] = (inner_a[k] || 0) + (inner_b[k] || 0)
-        end
+        acc[outer_key] = sum_branch_hits(a[outer_key] || {}, b[outer_key] || {})
+      end
+    end
+
+    def sum_branch_hits(inner_a, inner_b)
+      inner_keys = (inner_a.keys | inner_b.keys)
+      inner_keys.each_with_object({}) do |k, sub|
+        sub[k] = (inner_a[k] || 0) + (inner_b[k] || 0)
       end
     end
 

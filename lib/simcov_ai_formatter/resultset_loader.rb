@@ -39,16 +39,20 @@ module SimcovAiFormatter
         raise InvalidResultset, "expected non-empty top-level hash at #{@path}"
       end
 
-      raw.each do |suite, body|
-        unless body.is_a?(Hash) && body["coverage"].is_a?(Hash)
-          raise InvalidResultset, "suite #{suite.inspect} missing 'coverage' hash"
-        end
+      raw.each { |suite, body| validate_suite!(suite, body) }
+    end
 
-        body["coverage"].each do |file, entry|
-          unless entry.is_a?(Hash) && entry["lines"].is_a?(Array)
-            raise InvalidResultset, "file #{file.inspect} in suite #{suite.inspect} missing 'lines' array"
-          end
-        end
+    def validate_suite!(suite, body)
+      unless body.is_a?(Hash) && body["coverage"].is_a?(Hash)
+        raise InvalidResultset, "suite #{suite.inspect} missing 'coverage' hash"
+      end
+
+      body["coverage"].each { |file, entry| validate_file!(suite, file, entry) }
+    end
+
+    def validate_file!(suite, file, entry)
+      unless entry.is_a?(Hash) && entry["lines"].is_a?(Array)
+        raise InvalidResultset, "file #{file.inspect} in suite #{suite.inspect} missing 'lines' array"
       end
     end
   end

@@ -48,33 +48,36 @@ module SimcovAiFormatter
       lines = entry["lines"] || []
       relevant = lines.count { |v| !v.nil? }
       covered = lines.count { |v| v.is_a?(Integer) && v.positive? }
-      missed = relevant - covered
-
-      uncovered_lines = []
-      lines.each_with_index do |v, i|
-        uncovered_lines << (i + 1) if v.is_a?(Integer) && v.zero?
-      end
+      uncovered_lines = find_uncovered_lines(lines)
       uncovered_ranges = collapse_ranges(uncovered_lines)
 
       file_entry = {
         "relevant_lines" => relevant,
         "covered_lines" => covered,
-        "missed_lines" => missed,
+        "missed_lines" => relevant - covered,
         "coverage_percentage" => percentage(covered, relevant),
         "uncovered_ranges" => uncovered_ranges,
         "uncovered_lines" => uncovered_lines
       }
 
-      if @with_source && @source_reader && !uncovered_ranges.empty?
+      with_source_attached = @with_source && @source_reader && !uncovered_ranges.empty?
+      if with_source_attached
         file_entry["uncovered_ranges"] = uncovered_ranges.map do |range|
           attach_source(abs_path, range, lines)
         end
       end
 
+      attach_branches(file_entry, entry)
+      file_entry
+    end
+
+    def find_uncovered_lines(lines)
+      lines.each_with_index.filter_map { |v, i| i + 1 if v.is_a?(Integer) && v.zero? }
+    end
+
+    def attach_branches(file_entry, entry)
       branches = entry["branches"]
       file_entry["branches_raw"] = branches if branches.is_a?(Hash) && !branches.empty?
-
-      file_entry
     end
 
     def attach_source(abs_path, range, lines)
@@ -115,14 +118,10 @@ module SimcovAiFormatter
     end
 
     def aggregate_summary(files)
-      total_relevant = 0
-      total_covered = 0
-      total_missed = 0
-      files.each_value do |f|
-        total_relevant += f["relevant_lines"]
-        total_covered += f["covered_lines"]
-        total_missed += f["missed_lines"]
-      end
+      values = files.values
+      total_relevant = values.sum { |f| f["relevant_lines"] }
+      total_covered = values.sum { |f| f["covered_lines"] }
+      total_missed = values.sum { |f| f["missed_lines"] }
       {
         "total_files" => files.size,
         "relevant_lines" => total_relevant,
@@ -134,7 +133,7 @@ module SimcovAiFormatter
 
     def percentage(covered, relevant)
       return 100.0 if relevant.zero?
-      ((covered.to_f / relevant) * 10_000).round / 100.0
+      (covered.to_f / relevant * 100).round(2)
     end
 
     def relativize(abs_path)
