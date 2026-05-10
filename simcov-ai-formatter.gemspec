@@ -4,7 +4,7 @@ Gem::Specification.new do |spec|
   spec.name = "simcov-ai-formatter"
   spec.version = SimcovAiFormatter::VERSION
   spec.authors = ["Yuhi Sato"]
-  spec.email = ["yuhi_sato@smartbank.co.jp"]
+  spec.email = ["yuhi120101@gmail.com"]
 
   spec.summary = "Format SimpleCov coverage data into AI-friendly JSON"
   spec.description = "Converts SimpleCov coverage data into a JSON format optimized for LLM/AI consumption — per-file summaries, uncovered ranges, optional source snippets. Works as a SimpleCov formatter plugin (auto-emit during test runs) or via a programmatic Ruby API."
