@@ -5,7 +5,6 @@ require_relative "simcov_ai_formatter/suite_merger"
 require_relative "simcov_ai_formatter/formatter"
 require_relative "simcov_ai_formatter/source_reader"
 require_relative "simcov_ai_formatter/renderer"
-require_relative "simcov_ai_formatter/cli"
 
 module SimcovAiFormatter
   DEFAULT_RESULTSET_PATH = "coverage/.resultset.json".freeze

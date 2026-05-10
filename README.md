@@ -31,59 +31,6 @@ group :development, :test do
 end
 ```
 
-## Usage
-
-### Basics
-
-```sh
-# Read coverage/.resultset.json and print AI-friendly JSON to stdout
-simcov-ai-formatter
-
-# Specify a path
-simcov-ai-formatter path/to/.resultset.json
-
-# Pretty-print for human consumption
-simcov-ai-formatter --pretty | jq
-
-# Write to a file
-simcov-ai-formatter -o coverage/.resultset.ai.json
-```
-
-### Embedded source
-
-```sh
-# Embed 2 lines of context around each uncovered range so the LLM can reason about it
-simcov-ai-formatter --with-source --context 2
-```
-
-### Multiple suites
-
-For resultsets with multiple suites (e.g. RSpec + Cucumber), all suites are merged via `max(hit)` by default:
-
-```sh
-# A line covered by either RSpec or Cucumber is treated as covered
-simcov-ai-formatter
-
-# Or look at a single suite
-simcov-ai-formatter --suite RSpec
-```
-
-## CLI flags
-
-| Flag | Default | Purpose |
-|---|---|---|
-| `[RESULTSET_PATH]` (positional) | `coverage/.resultset.json` | Standard SimpleCov location |
-| `-o`, `--output PATH` | stdout | Output destination |
-| `--root PATH` | cwd | Base directory for relative paths |
-| `--suite NAME` | merge all suites | Pick a single suite |
-| `--with-source` | off | Embed source lines around uncovered ranges |
-| `--context N` | `2` | Lines of context when `--with-source` is set |
-| `--pretty` | off | Pretty-print JSON (default is minified for token efficiency) |
-| `-v`, `--version` | — | Print version |
-| `-h`, `--help` | — | Show help |
-
-Exit codes: `0` success / `1` user error (missing/invalid resultset) / `2` internal error.
-
 ## Output schema
 
 ### Default
@@ -118,7 +65,7 @@ Exit codes: `0` success / `1` user error (missing/invalid resultset) / `2` inter
 
 When multiple suites are merged, a top-level `"suites_merged": ["RSpec", "Cucumber"]` is emitted.
 
-### With `--with-source --context 2`
+### With `with_source: true, context: 2`
 
 Each `uncovered_ranges` entry gains a `source` array:
 
@@ -153,7 +100,7 @@ Structured form (`{ type: "if", line: ..., then_hits: ..., else_hits: ... }`) is
 
 ## As a SimpleCov formatter
 
-If you'd rather have the AI-friendly JSON emitted automatically as part of your test run, plug `simcov-ai-formatter` into SimpleCov's formatter pipeline. No separate CLI invocation needed.
+Plug `simcov-ai-formatter` into SimpleCov's formatter pipeline to emit the AI-friendly JSON automatically as part of your test run.
 
 ```ruby
 # spec/spec_helper.rb (or .simplecov)
@@ -187,17 +134,6 @@ SimcovAiFormatter::SimpleCovFormatter.pretty      = false
 SimcovAiFormatter::SimpleCovFormatter.output_path = "tmp/coverage.ai.json"  # nil = coverage/.resultset.ai.json
 ```
 
-### Choosing between the CLI and the formatter
-
-| | CLI | SimpleCov formatter |
-|---|---|---|
-| Re-format an existing `.resultset.json` | ✅ | ❌ (requires re-running tests) |
-| Auto-emit on every test run | ❌ (manual step) | ✅ |
-| Runtime dependency on simplecov | None | Yes (already in your test deps) |
-| Reflects SimpleCov filters/groups | ✅ (already baked into resultset) | ✅ (via `SimpleCov::Result`) |
-
-You can also use both — the formatter for local dev convenience, the CLI for CI artifact post-processing.
-
 ## Programmatic use
 
 The same logic is callable from Ruby:
@@ -214,19 +150,6 @@ result = SimcovAiFormatter.format(
 
 # result is a Hash
 puts result["summary"]["coverage_percentage"]
-```
-
-## Recipes
-
-```sh
-# Files under 80% coverage
-simcov-ai-formatter | jq '.files | to_entries | map(select(.value.coverage_percentage < 80)) | from_entries'
-
-# Top 10 files by missed line count
-simcov-ai-formatter | jq '.files | to_entries | sort_by(-.value.missed_lines) | .[:10] | from_entries'
-
-# On CI failure, hand the source-annotated JSON to Claude / GPT
-simcov-ai-formatter --with-source --context 3 -o /tmp/coverage.ai.json
 ```
 
 ## Development
