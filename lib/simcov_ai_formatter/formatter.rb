@@ -65,7 +65,8 @@ module SimcovAiFormatter
         "uncovered_lines" => uncovered_lines
       }
 
-      if @with_source && @source_reader && !uncovered_ranges.empty?
+      with_source_attached = @with_source && @source_reader && !uncovered_ranges.empty?
+      if with_source_attached
         file_entry["uncovered_ranges"] = uncovered_ranges.map do |range|
           attach_source(abs_path, range, lines)
         end
@@ -134,7 +135,7 @@ module SimcovAiFormatter
 
     def percentage(covered, relevant)
       return 100.0 if relevant.zero?
-      ((covered.to_f / relevant) * 10_000).round / 100.0
+      (covered.to_f / relevant * 100).round(2)
     end
 
     def relativize(abs_path)
