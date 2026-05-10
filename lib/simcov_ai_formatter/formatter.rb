@@ -72,11 +72,7 @@ module SimcovAiFormatter
     end
 
     def find_uncovered_lines(lines)
-      result = []
-      lines.each_with_index do |v, i|
-        result << (i + 1) if v.is_a?(Integer) && v.zero?
-      end
-      result
+      lines.each_with_index.filter_map { |v, i| i + 1 if v.is_a?(Integer) && v.zero? }
     end
 
     def attach_branches(file_entry, entry)
